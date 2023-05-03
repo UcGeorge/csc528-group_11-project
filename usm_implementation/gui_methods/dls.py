@@ -36,7 +36,7 @@ node_positions: VertexPositionMap = {}
 
 # Create the window
 window = tk.Tk()
-window.title("Depth-first search GUI demo")
+window.title("Depth-limited search GUI demo")
 
 # Create the canvas
 canvas = tk.Canvas(window, width=500, height=500)
@@ -213,7 +213,8 @@ if __name__ == "__main__":
         draw_graph(graph)
 
         def perform_dls():
-            _perform_dls(root=root, goal=goal, graph=graph, depth_limit=depth_limit)
+            _perform_dls(root=root, goal=goal, graph=graph,
+                         depth_limit=depth_limit)
 
         # Create the button to start
         button = tk.Button(window, text="Start DLS", command=perform_dls)

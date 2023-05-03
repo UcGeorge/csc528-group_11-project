@@ -28,7 +28,7 @@ node_positions: VertexPositionMap = {}
 
 # Create the window
 window = tk.Tk()
-window.title("Depth-first search GUI demo")
+window.title("Breadth-first search GUI demo")
 
 # Create the canvas
 canvas = tk.Canvas(window, width=500, height=500)
