@@ -1,11 +1,18 @@
 """
-Breadth-First Search:
-The breadth-first search algorithm starts at the root node and explores all 
-the vertices at the current depth before moving on to the vertices at the next breadth level.
-It maintains a queue of vertices to be explored. When a vertex is explored,
-it is removed from the queue and its neighboring vertices are added to the end of the queue
-if they have not already been visited.
-The search continues until the goal vertex is found or the queue is empty.
+Depth-Limited Search:
+The depth-limited search algorithm is a variant of the depth-first search algorithm 
+that limits the maximum depth of exploration. It starts at the root node and explores 
+as far as possible along each branch before backtracking. However, when the maximum 
+depth limit is reached, the algorithm backtracks without exploring further along that branch.
+
+The depth-limited search algorithm maintains a stack of vertices to be explored, similar 
+to the depth-first search algorithm. When a vertex is explored, it is removed from 
+the stack, and its neighboring vertices are added to the stack if they have not 
+already been visited and the maximum depth limit has not been reached.
+
+The search continues until the goal vertex is found, or the stack is empty. If the 
+goal vertex is not found within the maximum depth limit, the algorithm will not continue 
+searching further beyond the specified limit.
 """
 
 import json
@@ -19,6 +26,7 @@ Graph = Dict[Vertex, Set[Vertex]]
 Path = List[Vertex]
 VertexPositionMap = Dict[Vertex, Tuple[float, float]]
 PathMap = Dict[Vertex, Union[Vertex, None]]
+DepthMap = Dict[Vertex, int]
 
 # Graph data structure
 graph: Graph = {}
@@ -101,7 +109,7 @@ def _compose_path(v: Vertex, paths: PathMap) -> Path:
 
     Args:
     - v (Vertex): The vertex to start the path from.
-    - paths (PathMap): A map that maps vertices to their direct parents after a BFS is performed.
+    - paths (PathMap): A map that maps vertices to their direct parents after a DLS is performed.
 
     Returns:
         Path: A list of vertices that represents the path from the root to the goal.
@@ -115,27 +123,32 @@ def _compose_path(v: Vertex, paths: PathMap) -> Path:
     return path
 
 
-def _perform_bfs(root: Vertex, goal: Vertex, graph: Graph) -> Path:
+def _perform_dls(root: Vertex, goal: Vertex, graph: Graph, depth_limit: int) -> Path:
     """
-    This function performs a breadth-first search on a graph starting from a given root 
+    This function performs a depth-limited search on a graph starting from a given root 
     and finds a path from the root to a given goal node. It returns a set of vertices in the path.
 
     Args:
     - root (Vertex): A Vertex representing the starting vertex of the search.
     - goal (Vertex): A Vertex representing the goal vertex to be reached.
     - graph (Graph): A Graph representing the graph search space represented as an adjacency list.
+    - depth_limit (int): An integer representing the maximum depth the algorithm can search.
 
     Returns:
         A list of vertices representing the path from the root to the goal vertex, if a path exists. 
         If no path is found, an empty set is returned.
     """
-    queue: List[Vertex] = list([root])
+    stack: List[Vertex] = list([root])
     visited: Set[Vertex] = set()
     paths: PathMap = {v: None for v in graph}
+    depths: DepthMap = {v: -1 for v in graph}
 
-    while queue:
-        # Remove Vertex from the queue
-        vertex = queue.pop(0)
+    # The depth of the root node is 0
+    depths[root] = 0
+
+    while stack:
+        # Remove Vertex from the stack
+        vertex = stack.pop(-1)
 
         # This Vertex has not been explored
         if vertex not in visited:
@@ -153,20 +166,25 @@ def _perform_bfs(root: Vertex, goal: Vertex, graph: Graph) -> Path:
                 draw_path(node_path, color="green", width=8)
 
                 # Return the path to the vertex
-                return node_path
+                return _compose_path(vertex, paths)
 
-            # Add all adjacent vertices that have not been visited to queue
-            adjacent_vertices = graph[vertex] - visited - set(queue)
-            queue.extend(adjacent_vertices)
+            # Vertex is at the depth limit
+            if depths[vertex] >= depth_limit:
+                continue
+
+            # Add all adjacent vertices that have not been visited to stack
+            adjacent_vertices = graph[vertex] - visited - set(stack)
+            stack.extend(adjacent_vertices)
 
             for v in adjacent_vertices:
                 paths[v] = vertex
+                depths[v] = depths[vertex] + 1
 
     return set()
 
 
 if __name__ == "__main__":
-    print("\n_-_-_-_-_-_-_-_-_-_-_-_-_-_RUNNING BFS USM SEARCH_-_-_-_-_-_-_-_-_-_-_-_-_-_\n")
+    print("\n_-_-_-_-_-_-_-_-_-_-_-_-_-_RUNNING DLS USM SEARCH_-_-_-_-_-_-_-_-_-_-_-_-_-_\n")
 
     # Get graph config from file
     graph_config = read_json_file("./usm_implementation/graph-config-v2.json")
@@ -175,6 +193,7 @@ if __name__ == "__main__":
     root = graph_config["root"]
     goal = graph_config["goal"]
     graph = graph_config["graph"]
+    depth_limit = graph_config["depth_limit"]
 
     # Get the adjacency list for each vertex from user
     for v in graph:
@@ -193,11 +212,11 @@ if __name__ == "__main__":
         # Draw the graph
         draw_graph(graph)
 
-        def perform_bfs():
-            _perform_bfs(root=root, goal=goal, graph=graph)
+        def perform_dls():
+            _perform_dls(root=root, goal=goal, graph=graph, depth_limit=depth_limit)
 
         # Create the button to start
-        button = tk.Button(window, text="Start BFS", command=perform_bfs)
+        button = tk.Button(window, text="Start DLS", command=perform_dls)
         button.pack()
 
         # Show the window
@@ -207,4 +226,4 @@ if __name__ == "__main__":
     except:
         print("[An unknown error occured]")
 
-    # print(f"[PATH] {perform_bfs(root=root, goal=goal, graph=graph)}")
+    # print(f"[PATH] {perform_dls(root=root, goal=goal, graph=graph)}")

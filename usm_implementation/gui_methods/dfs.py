@@ -43,29 +43,13 @@ def read_json_file(file_path):
 
 def draw_graph(graph: Graph) -> None:
     for node in graph:
-        # Get the position of the node
-        x, y = node_positions[node]
-
-        # Draw the nodes as circles
-        canvas.create_oval(x-20, y-20, x+20, y+20, fill="black")
-        canvas.create_text(x, y, text=node, fill="white")
-        canvas.update()
-        time.sleep(.15)
-
-    for node in graph:
-        # Get the position of the node
-        x1, y1 = node_positions[node]
 
         # Draw the edges to its neighbors
         for neighbor in graph[node]:
-            x2, y2 = node_positions[neighbor]
-            # Draw the edge from the node to the neighbor
-            canvas.create_line(x1, y1, x2, y2, dash=(3, 5), arrow=tk.LAST)
-            canvas.update()
-            time.sleep(.15)
+            draw_path([node, neighbor], "black", 1, "white")
 
 
-def draw_path(path: Path, color: str, width: int) -> None:
+def draw_path(path: Path, color: str, width: int, text_color: str = "black",) -> None:
     if not path:
         return
 
@@ -76,15 +60,39 @@ def draw_path(path: Path, color: str, width: int) -> None:
 
         # Get the position of the start & end node
         x1, y1 = node_positions[start]
+        X1, Y1 = x1, y1
+
         x2, y2 = node_positions[end]
+        X2, Y2 = x2, y2
+
+        if X1 < X2:
+            X1, X2 = X1+20, X2-20
+        elif X1 > X2:
+            X1, X2 = X1-20, X2+20
+
+        if Y1 < Y2:
+            Y1, Y2 = Y1+20, Y2-20
+        elif Y1 > Y2:
+            Y1, Y2 = Y1-20, Y2+20
 
         # Draw the edge from the start to end
-        canvas.create_line(x1, y1, x2, y2, arrow=tk.LAST,
-                           width=width, fill=color)
+        canvas.create_line(X1, Y1, X2, Y2, arrow=tk.LAST,
+                           width=width, fill=color, capstyle=tk.ROUND)
+
+        # Draw the nodes as circles
+        canvas.create_oval(x1-20, y1-20, x1+20, y1+20, fill=color)
+        canvas.create_text(x1, y1, text=start, fill=text_color)
         canvas.update()
 
         start = end
         time.sleep(.3)
+
+    # Get the position of the start node
+    x1, y1 = node_positions[start]
+
+    # Draw the node as a circle
+    canvas.create_oval(x1-20, y1-20, x1+20, y1+20, fill=color)
+    canvas.create_text(x1, y1, text=start, fill=text_color)
 
 
 def _compose_path(v: Vertex, paths: PathMap) -> Path:
@@ -161,7 +169,7 @@ if __name__ == "__main__":
     print("\n_-_-_-_-_-_-_-_-_-_-_-_-_-_RUNNING DFS USM SEARCH_-_-_-_-_-_-_-_-_-_-_-_-_-_\n")
 
     # Get graph config from file
-    graph_config = read_json_file("./usm_implementation/graph-config.json")
+    graph_config = read_json_file("./usm_implementation/graph-config-v2.json")
 
     # Get root & goal vertices from user
     root = graph_config["root"]

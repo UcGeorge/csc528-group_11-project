@@ -1,6 +1,8 @@
 {
     "root": "H",
     "goal": "E",
+	"depth_limit": 3,
+	"max_depth": 3,
     "graph": {
         "A": [
             "B",
