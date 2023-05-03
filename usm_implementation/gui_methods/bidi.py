@@ -1,0 +1,273 @@
+"""
+Bi-Directional Search:
+The bi-directional search algorithm is a variant of the breadth-first search 
+algorithm that simultaneously performs two breadth-first searches from the source 
+vertex and the target vertex towards each other. It maintains two sets of visited 
+vertices, one for the vertices visited from the source vertex and one for the 
+vertices visited from the target vertex.
+
+The search starts with both sets containing only the source vertex and the target 
+vertex, respectively. At each step of the search, the algorithm expands the set 
+of vertices that can be reached from the source vertex and the target vertex 
+simultaneously by exploring their neighboring vertices.
+
+The bi-directional search algorithm continues until a vertex is found that exists 
+in both sets of visited vertices. This vertex is the intersection point of the two 
+search trees and represents the shortest path from the source vertex to the target vertex.
+"""
+
+import json
+import time
+import tkinter as tk
+from typing import Dict, Union, Set, List, Tuple
+
+# The various data types used in this module
+Vertex = Union[int, str]
+Graph = Dict[Vertex, Set[Vertex]]
+Path = List[Vertex]
+VertexPositionMap = Dict[Vertex, Tuple[float, float]]
+PathMap = Dict[Vertex, Union[Vertex, None]]
+
+# Graph data structure
+graph: Graph = {}
+
+# Positions of the nodes on the canvas
+node_positions: VertexPositionMap = {}
+
+# Create the window
+window = tk.Tk()
+window.title("Breadth-first search GUI demo")
+
+# Create the canvas
+canvas = tk.Canvas(window, width=500, height=500)
+canvas.pack()
+
+
+def read_json_file(file_path):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+    return data
+
+
+def draw_graph(graph: Graph) -> None:
+    for node in graph:
+
+        # Draw the edges to its neighbors
+        for neighbor in graph[node]:
+            draw_path([node, neighbor], "black", 1, "white")
+
+
+def draw_path(path: Path, color: str, width: int, text_color: str = "black",) -> None:
+    if not path:
+        return
+
+    start = path[0]
+
+    for i in range(1, len(path)):
+        end = path[i]
+
+        # Get the position of the start & end node
+        x1, y1 = node_positions[start]
+        X1, Y1 = x1, y1
+
+        x2, y2 = node_positions[end]
+        X2, Y2 = x2, y2
+
+        if X1 < X2:
+            X1, X2 = X1+20, X2-20
+        elif X1 > X2:
+            X1, X2 = X1-20, X2+20
+
+        if Y1 < Y2:
+            Y1, Y2 = Y1+20, Y2-20
+        elif Y1 > Y2:
+            Y1, Y2 = Y1-20, Y2+20
+
+        # Draw the edge from the start to end
+        canvas.create_line(X1, Y1, X2, Y2, arrow=tk.LAST,
+                           width=width, fill=color, capstyle=tk.ROUND)
+
+        # Draw the nodes as circles
+        canvas.create_oval(x1-20, y1-20, x1+20, y1+20, fill=color)
+        canvas.create_text(x1, y1, text=start, fill=text_color)
+        canvas.update()
+
+        start = end
+        time.sleep(.3)
+
+    # Get the position of the start node
+    x1, y1 = node_positions[start]
+
+    # Draw the node as a circle
+    canvas.create_oval(x1-20, y1-20, x1+20, y1+20, fill=color)
+    canvas.create_text(x1, y1, text=start, fill=text_color)
+
+
+def _compose_path(v: Vertex, paths: PathMap) -> Path:
+    """
+    Composes a path from the root node to a given vertex.
+
+    Args:
+    - v (Vertex): The vertex to start the path from.
+    - paths (PathMap): A map that maps vertices to their direct parents after a BIDI is performed.
+
+    Returns:
+        Path: A list of vertices that represents the path from the root to the goal.
+    """
+    path: Path = [v]
+
+    while paths[v]:
+        path.insert(0, paths[v])
+        v = paths[v]
+
+    return path
+
+
+def _perform_bidi(root: Vertex, goal: Vertex, graph: Graph) -> Path:
+    """
+    This function performs a bi-directional search on a graph starting from a given root 
+    and finds a path from the root to a given goal node. It returns a set of vertices in the path.
+
+    Args:
+    - root (Vertex): A Vertex representing the starting vertex of the search.
+    - goal (Vertex): A Vertex representing the goal vertex to be reached.
+    - graph (Graph): A Graph representing the graph search space represented as an adjacency list.
+
+    Returns:
+        A list of vertices representing the path from the root to the goal vertex, if a path exists. 
+        If no path is found, an empty set is returned.
+    """
+    root_queue: List[Vertex] = list([root])
+    goal_queue: List[Vertex] = list([goal])
+
+    root_visited: Set[Vertex] = set()
+    goal_visited: Set[Vertex] = set()
+
+    paths: PathMap = {v: None for v in graph}
+
+    while root_queue or goal_queue:
+        if root_queue:
+            # Remove Vertex from the queue
+            vertex = root_queue.pop(0)
+
+            # This Vertex has not been explored
+            if vertex not in root_visited:
+                # Add Vertex to the list of root_visited vertices
+                root_visited.add(vertex)
+
+                node_path = _compose_path(vertex, paths)
+
+                # Draw the path
+                draw_path(node_path, color="orange", width=4)
+
+                # # Vertex is the goal
+                # if vertex == goal:
+                #     # Return the path to the vertex
+                #     return _compose_path(vertex, paths)
+
+                # Add all adjacent vertices that have not been root_visited to root_queue
+                adjacent_vertices = graph[vertex] - \
+                    root_visited - set(root_queue)
+                root_queue.extend(adjacent_vertices)
+
+                for v in adjacent_vertices:
+                    # # Vertex has been seen
+                    if paths[v]:
+                        path_to_goal = _compose_path(v, paths)[::-1]
+
+                        # Return the node path to goal
+                        node_path.extend(path_to_goal)
+
+                        # Draw the path
+                        draw_path(node_path, color="green", width=8)
+
+                        # Return the path to the goal
+                        return node_path
+
+                    # Vertex has not been seen
+                    paths[v] = vertex
+
+        if goal_queue:
+            # Remove Vertex from the queue
+            vertex = goal_queue.pop(0)
+
+            # This Vertex has not been explored
+            if vertex not in goal_visited:
+                # Add Vertex to the list of goal_visited vertices
+                goal_visited.add(vertex)
+
+                node_path = _compose_path(vertex, paths)
+
+                # Draw the path
+                draw_path(node_path, color="orange", width=4)
+
+                # # Vertex is the root
+                # if vertex == root:
+                #     # Return the path to the vertex
+                #     return _compose_path(vertex, paths)
+
+                # Add all adjacent vertices that have not been goal_visited to goal_queue
+                adjacent_vertices = graph[vertex] - \
+                    goal_visited - set(goal_queue)
+                goal_queue.extend(adjacent_vertices)
+
+                for v in adjacent_vertices:
+                    # Vertex has been seen
+                    if paths[v]:
+                        path_from_root = _compose_path(v, paths)
+
+                        # Return the node path to goal
+                        path_from_root.extend(node_path[::-1])
+
+                        # Draw the path
+                        draw_path(path_from_root, color="green", width=8)
+
+                        # Return the path to the goal
+                        return path_from_root
+
+                    # Vertex has not been seen
+                    paths[v] = vertex
+
+    return set()
+
+
+if __name__ == "__main__":
+    print("\n_-_-_-_-_-_-_-_-_-_-_-_-_-_RUNNING BIDI USM SEARCH_-_-_-_-_-_-_-_-_-_-_-_-_-_\n")
+
+    # Get graph config from file
+    graph_config = read_json_file("./usm_implementation/graph-config-v2.json")
+
+    # Get root & goal vertices from user
+    root = graph_config["root"]
+    goal = graph_config["goal"]
+    graph = graph_config["graph"]
+
+    # Get the adjacency list for each vertex from user
+    for v in graph:
+        node_positions[v] = tuple(map(
+            lambda e: float(e),
+            graph_config["node_positions"][v]))
+
+        graph[v] = set(map(
+            lambda e: e.strip(),
+            graph[v]))
+
+    print("\n_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-\n")
+
+    try:
+        # Draw the graph
+        draw_graph(graph)
+
+        def perform_bidi():
+            print(f"[PATH] {_perform_bidi(root=root, goal=goal, graph=graph)}")
+
+        # Create the button to start
+        button = tk.Button(window, text="Start BIDI", command=perform_bidi)
+        button.pack()
+
+        # Show the window
+        window.mainloop()
+    except KeyboardInterrupt:
+        print("[Execution interrupted by user]")
+    except:
+        print("[An unknown error occured]")
