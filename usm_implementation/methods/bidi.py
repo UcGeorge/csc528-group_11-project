@@ -15,7 +15,6 @@ The bi-directional search algorithm continues until a vertex is found that exist
 in both sets of visited vertices. This vertex is the intersection point of the two 
 search trees and represents the shortest path from the source vertex to the target vertex.
 """
-
 import json
 from typing import Dict, Union, Set, List, Tuple
 
@@ -26,8 +25,18 @@ Path = List[Vertex]
 VertexPositionMap = Dict[Vertex, Tuple[float, float]]
 PathMap = Dict[Vertex, Union[Vertex, None]]
 
-# Graph data structure
+# Graph configurations
+root = None
+goal = None
 graph: Graph = {}
+
+
+def _draw_path(path: Path, color: str, width: int, draw_path, ui_elements):
+    # Draw the path
+    if draw_path:
+        drawn_elements = draw_path(path, color=color, width=width)
+        if ui_elements:
+            ui_elements.extend(drawn_elements)
 
 
 def read_json_file(file_path):
@@ -56,7 +65,12 @@ def _compose_path(v: Vertex, paths: PathMap) -> Path:
     return path
 
 
-def perform_bidi(root: Vertex, goal: Vertex, graph: Graph) -> Path:
+def perform_bidi(
+        root: Vertex,
+        goal: Vertex,
+        graph: Graph,
+        draw_path=None,
+        ui_elements: List[int] = None) -> Path:
     """
     This function performs a bi-directional search on a graph starting from a given root 
     and finds a path from the root to a given goal node. It returns a set of vertices in the path.
@@ -88,6 +102,10 @@ def perform_bidi(root: Vertex, goal: Vertex, graph: Graph) -> Path:
                 # Add Vertex to the list of root_visited vertices
                 root_visited.add(vertex)
 
+                node_path = _compose_path(vertex, paths)
+
+                _draw_path(node_path, "orange", 4, draw_path, ui_elements)
+
                 # # Vertex is the goal
                 # if vertex == goal:
                 #     # Return the path to the vertex
@@ -102,11 +120,15 @@ def perform_bidi(root: Vertex, goal: Vertex, graph: Graph) -> Path:
                     # # Vertex has been seen
                     if paths[v]:
                         path_to_goal = _compose_path(v, paths)[::-1]
-                        path_from_root = _compose_path(vertex, paths)
 
-                        # Return the path to the vertex
-                        path_from_root.extend(path_to_goal)
-                        return path_from_root
+                        # Return the node path to goal
+                        node_path.extend(path_to_goal)
+
+                        _draw_path(node_path, "green", 8,
+                                   draw_path, ui_elements)
+
+                        # Return the path to the goal
+                        return node_path
 
                     # Vertex has not been seen
                     paths[v] = vertex
@@ -119,6 +141,10 @@ def perform_bidi(root: Vertex, goal: Vertex, graph: Graph) -> Path:
             if vertex not in goal_visited:
                 # Add Vertex to the list of goal_visited vertices
                 goal_visited.add(vertex)
+
+                node_path = _compose_path(vertex, paths)
+
+                _draw_path(node_path, "orange", 4, draw_path, ui_elements)
 
                 # # Vertex is the root
                 # if vertex == root:
@@ -133,11 +159,15 @@ def perform_bidi(root: Vertex, goal: Vertex, graph: Graph) -> Path:
                 for v in adjacent_vertices:
                     # Vertex has been seen
                     if paths[v]:
-                        path_to_goal = _compose_path(vertex, paths)[::-1]
                         path_from_root = _compose_path(v, paths)
 
-                        # Return the path to the vertex
-                        path_from_root.extend(path_to_goal)
+                        # Return the node path to goal
+                        path_from_root.extend(node_path[::-1])
+
+                        _draw_path(path_from_root, "green",
+                                   8, draw_path, ui_elements)
+
+                        # Return the path to the goal
                         return path_from_root
 
                     # Vertex has not been seen
@@ -165,12 +195,12 @@ if __name__ == "__main__":
 
     print("\n_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-\n")
 
-    # try:
-    #     # Perform BIDI and print the result
-    #     print(f"[PATH] {perform_bidi(root=root, goal=goal, graph=graph)}")
-    # except KeyboardInterrupt:
-    #     print("[Execution interrupted by user]")
-    # except:
-    #     print("[An unknown error occured]")
+    try:
+        # Perform BIDI and print the result
+        print(f"[PATH] {perform_bidi(root=root, goal=goal, graph=graph)}")
+    except KeyboardInterrupt:
+        print("[Execution interrupted by user]")
+    except:
+        print("[An unknown error occured]")
 
-    print(f"[PATH] {perform_bidi(root=root, goal=goal, graph=graph)}")
+    # print(f"[PATH] {perform_bidi(root=root, goal=goal, graph=graph)}")

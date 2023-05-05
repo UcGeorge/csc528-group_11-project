@@ -14,7 +14,7 @@ The search continues until the goal vertex is found, or the stack is empty. If t
 goal vertex is not found within the maximum depth limit, the algorithm will not continue 
 searching further beyond the specified limit.
 """
-
+import json
 from typing import Dict, Union, Set, List, Tuple
 
 # The various data types used in this module
@@ -25,8 +25,25 @@ VertexPositionMap = Dict[Vertex, Tuple[float, float]]
 PathMap = Dict[Vertex, Union[Vertex, None]]
 DepthMap = Dict[Vertex, int]
 
-# Graph data structure
+# Graph configurations
+root = None
+goal = None
+depth_limit = 0
 graph: Graph = {}
+
+
+def _draw_path(path: Path, color: str, width: int, draw_path, ui_elements):
+    # Draw the path
+    if draw_path:
+        drawn_elements = draw_path(path, color=color, width=width)
+        if ui_elements:
+            ui_elements.extend(drawn_elements)
+
+
+def read_json_file(file_path):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+    return data
 
 
 def _compose_path(v: Vertex, paths: PathMap) -> Path:
@@ -49,7 +66,13 @@ def _compose_path(v: Vertex, paths: PathMap) -> Path:
     return path
 
 
-def perform_dls(root: Vertex, goal: Vertex, graph: Graph, depth_limit: int) -> Path:
+def perform_dls(
+        root: Vertex,
+        goal: Vertex,
+        graph: Graph,
+        depth_limit: int,
+        draw_path=None,
+        ui_elements: List[int] = None) -> Path:
     """
     This function performs a depth-limited search on a graph starting from a given root 
     and finds a path from the root to a given goal node. It returns a set of vertices in the path.
@@ -81,10 +104,18 @@ def perform_dls(root: Vertex, goal: Vertex, graph: Graph, depth_limit: int) -> P
             # Add Vertex to the list of visited vertices
             visited.add(vertex)
 
+            node_path = _compose_path(vertex, paths)
+
+            # Draw the path
+            _draw_path(node_path, "orange", 4, draw_path, ui_elements)
+
             # Vertex is the goal
             if vertex == goal:
+                # Draw the path
+                _draw_path(node_path, "green", 8, draw_path, ui_elements)
+
                 # Return the path to the vertex
-                return _compose_path(vertex, paths)
+                return node_path
 
             # Vertex is at the depth limit
             if depths[vertex] >= depth_limit:
@@ -104,23 +135,20 @@ def perform_dls(root: Vertex, goal: Vertex, graph: Graph, depth_limit: int) -> P
 if __name__ == "__main__":
     print("\n_-_-_-_-_-_-_-_-_-_-_-_-_-_RUNNING DLS USM SEARCH_-_-_-_-_-_-_-_-_-_-_-_-_-_\n")
 
-    # Get a list of vertices from user
-    vertices: "list[str]" = list(map(
-        lambda e: e.strip(),
-        input("Input graph verticies: ").split(",")))
+    # Get graph config from file
+    graph_config = read_json_file("./usm_implementation/graph-config-v2.json")
 
     # Get root & goal vertices from user
-    root = input("Input root vertex: ")
-    goal = input("Input goal vertex: ")
-    depth_limit = int(input("Input the depth limit: "))
-
-    print()
+    root = graph_config["root"]
+    goal = graph_config["goal"]
+    graph = graph_config["graph"]
+    depth_limit = graph_config["depth_limit"]
 
     # Get the adjacency list for each vertex from user
-    for v in vertices:
+    for v in graph:
         graph[v] = set(map(
             lambda e: e.strip(),
-            input(f"Input verticies connected to the vertex [{v}]: ").split(",")))
+            graph[v]))
 
     print("\n_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-\n")
 
