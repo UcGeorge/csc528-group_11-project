@@ -209,7 +209,7 @@ if __name__ == "__main__":
 
     # Get graph config from file
     graph_config = read_json_file(
-        f"./usm_implementation\
+        f".\
 /graph-config-v\
 {input('[ENTER GRAPH INDEX] (1 - 3) > ')}\
 .json")
