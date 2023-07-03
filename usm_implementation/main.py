@@ -123,7 +123,7 @@ def draw_path(path: Path, color: str, width: int, text_color: str = "black",) ->
         elements.extend([id1, id2, id3, id4, id5])
 
         start = end
-    time.sleep(.3)
+    time.sleep(1)
 
     # Get the position of the start node
     x1, y1 = node_positions[start]
@@ -199,13 +199,13 @@ def main(ui_elements: List):
             ui_elements=ui_elements)
 
     else:
-        raise("[INVALID CHOICE]")
+        raise ("[INVALID CHOICE]")
 
     print(f"[PATH] {result}")
 
 
 if __name__ == "__main__":
-    print("[1] Undirected graph\n[2] Directed graph\n[3] Weigted graph\n\n---\n\n")
+    print("[1] Directed graph\n[2] Undirected graph\n[3] Weigted graph\n\n---\n\n")
 
     # Get graph config from file
     graph_config = read_json_file(
